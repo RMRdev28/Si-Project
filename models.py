@@ -21,8 +21,22 @@ class Utilisateur(models.Model):
     zipCode = models.CharField(max_length = 50,null=False)
     typeUtilisateur = models.CharField(max_length = 20, choices=TYPEUSER,default='client',null=False)
     trashU = models.SmallIntegerField(default = 0)
+    center = None
+    sallaire = None
+
+
     def __str__(self):
         return self.nom+"-"+self.prenom
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.typeUtilisateur == "client":
+            Client.objects.create(client=self, credit=0)
+        elif self.typeUtilisateur == "fournisseur":
+            Fournisseur.objects.create(fournisseur=self, solde=0)
+        elif self.typeUtilisateur == "employe" and self.center and self.sallaire:
+            Employe.objects.create(employe=self, centre=self.center, sallaire=self.sallaire)
+
     
 class Login(models.Model):
     userName = models.CharField(max_length = 50,null=False)
@@ -69,7 +83,7 @@ class Produit(models.Model):
     desigP = models.CharField(max_length = 250,null=False)
     descP =  models.CharField(max_length = 250,null=False)
     typeP = models.CharField(max_length=10, choices=TYPEPRODUIT,default='matiere',null=False)
-    qntEnStock = models.PositiveIntegerField()
+    qntEnStock = models.PositiveIntegerField(default = 0)
     trashP = models.SmallIntegerField(default = 0)
     def __str__(self):
         return self.desigP
@@ -100,6 +114,8 @@ class Achat(models.Model):
         produit = self.prdA
         produit.qntEnStock += self.qntA
         produit.save()
+        if produit.qntEnStock > 10:
+            Notification.objects.filter(prd = produit).delete()
         if self.typeA == 'partiellement' and self.statuA == 'incomplet':
             fournisseur = self.fournisseurA
             fournisseur.solde += self.prixA*self.qntA
@@ -132,7 +148,12 @@ class Vente(models.Model):
         super().save(*args, **kwargs)
         produit = self.prdV
         produit.qntEnStock -= self.qntV
+        
         produit.save()
+        if produit.qntEnStock <= 10:
+            notification = Notification(status=0, prd=produit)
+            notification.save()
+
         if self.typeV == 'partiellement' and self.statuV == 'incomplet':
             client = self.clientV
             client.credit += self.prixV*self.qntV
@@ -207,5 +228,9 @@ class MasAbs(models.Model):
             return "Masrouf :"+self.empMA.employe.nom
         
 
+
+class Notification(models.Model):
+    status = models.IntegerField()
+    prd = models.ForeignKey(Produit,on_delete=models.CASCADE, null=False)
 
 

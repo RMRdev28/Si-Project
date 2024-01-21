@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Utilisateur, Centre, Employe, Fournisseur, Client, Achat, Vente, Produit, Transfert, Versement, MasAbs, Login
+from .models import Utilisateur, Centre, Employe, Fournisseur, Client, Achat, Vente, Produit, Transfert, Versement, MasAbs, Login, Notification
 # Register your models here.
 
 admin.site.register(Utilisateur)
@@ -14,3 +14,4 @@ admin.site.register(Transfert)
 admin.site.register(Versement)
 admin.site.register(MasAbs)
 admin.site.register(Login)
+admin.site.register(Notification)
