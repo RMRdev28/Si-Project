@@ -13,14 +13,14 @@ export default function Navbar() {
     else
       setIsOpen(true)
   }
-
+  useEffect(() => {
+    getNotifications();
+}, [Notifications]);
   const hasUnreadNotifications = (notifications) => {
     return notifications.some(notification => notification.status === 0);
   };
 
-  useEffect(() => {
-    getNotifications();
-}, [Notifications]);
+
 const notifications = Notifications ? Notifications.notifications : [];
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-body-tertiary fixed-top" style={{ marginLeft: '95px',"zIndex":"100" }}>

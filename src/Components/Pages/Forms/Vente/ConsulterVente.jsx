@@ -1,17 +1,23 @@
 import React, { useContext, useEffect, useState } from 'react';
 import ApiContext from '../../../../ApiContext';
 import { Table, Pagination } from 'react-bootstrap';
+import Modal from 'react-modal';
 import Swal from 'sweetalert2'
+import DetailVente from './DetailVente';
 
 export default function ConsulterVente() {
-  const { Ventes, fetchVentes,fetchClients,Clients,fetchProductsall,Products } = useContext(ApiContext);
+  const { Ventes, fetchVentes,fetchClients,Clients,fetchProductsall,Products,deleteVente} = useContext(ApiContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [filterType1, setFilterType1] = useState('');
   const [filterType2, setFilterType2] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
+  const [idVente, setIdVente] = useState('');
+  const [totalVente, setTotalVente] = useState('');
+  const [showDetailVenteModal, setShowDetailVenteModal] = useState(false);
+  const handleOpenModalDetail = (id,qnt,prix) => {setShowDetailVenteModal(true); setIdVente(id); setTotalVente(qnt*prix)};
+  const handleCloseModalDetail = () => setShowDetailVenteModal(false);
   useEffect(() => {
     fetchClients()
     fetchProductsall()
@@ -20,6 +26,24 @@ export default function ConsulterVente() {
   const clients = Clients ? Clients.clients : [];
   const produits = Products ? Products.produits : [];
   const ventes = Ventes ? Ventes.ventes : [];
+  const customStyles = {
+    content: {
+      position:'fixed',
+      top: '50%',
+      left: '55%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      border:'none',
+      zIndex:99999,
+      backgroundColor:'white',
+      height: "500px",
+      overFlow:'auto',
+      
+    },
+  };
+
   const handleDelete = (id) =>{
     Swal.fire({
       title: 'Are you sure?',
@@ -31,16 +55,16 @@ export default function ConsulterVente() {
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
-        deleteProduct(id).then(() => {
+        deleteVente(id).then(() => {
           Swal.fire(
             'Deleted!',
-            'Your file has been deleted.',
+            'Your Vente has been deleted.',
             'success'
           )
         }).catch((error) => {
           Swal.fire(
             'Failed!',
-            'There was a problem deleting your file.',
+            'There was a problem deleting your Vente.',
             'error'
           )
         });
@@ -149,6 +173,14 @@ export default function ConsulterVente() {
             </div>
             {ventes && ventes.length > 0 ? (
                 <>
+                             <Modal
+                        isOpen={showDetailVenteModal}
+                        onRequestClose={handleCloseModalDetail}
+                        
+                        contentLabel="Example Modal"
+                        style={customStyles}>
+                          <DetailVente closeModalDetail={handleCloseModalDetail} id={idVente} total={totalVente} />
+                </Modal>
                     <Table striped bordered hover>
                         <thead>
                             <tr>
@@ -178,7 +210,7 @@ export default function ConsulterVente() {
                                       <button className="btn btn-primary me-1" onClick={() => editProduct(v.id)}><i class="bi bi-pencil-square"></i></button>
                                         <button className="btn btn-danger me-1" onClick={() => handleDelete(v.id)}><i class="bi bi-trash3-fill"></i></button>
                                         {v.typeV === "partiellement" ? (
-                                       <button className="btn btn-warning me-1"  onClick={() => editProduct(v.id)}><i className="bi bi-info-square"></i></button>
+                                       <button className="btn btn-warning me-1"  onClick={() => handleOpenModalDetail(v.id,v.qntV,v.prixV)}><i className="bi bi-info-square"></i></button>
                                     ): (<span></span>)}
                                     </td>
                                 </tr>

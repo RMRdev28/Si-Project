@@ -4,6 +4,9 @@ import ApiContext from '../../../../ApiContext';
 
 const AjouterAchatForm = () => {
   const {ProductsC,fetchProductsC,Fournisseurs,fetchFournisseurs, insertAchat} = useContext(ApiContext);
+  const [typeAchat,setTypeAchat]= useState('');
+  const [qntA,setQntA]= useState('');
+  const [prixA,setPrixA]= useState('');
   const [AchatData, setAchatData] = useState({
     prdA: '',
     qntA: '',
@@ -11,7 +14,8 @@ const AjouterAchatForm = () => {
     fournisseurA: '',
     typeA: '',
     dateA: '',
-    statuA: 'complet'
+    statuA: 'complet',
+    montantVer: '',
 
   });
 
@@ -55,11 +59,21 @@ const AjouterAchatForm = () => {
         ...prevData,
         ["statuA"]: "incomplet",
       }));
+      setTypeAchat('partiellement');
     }else if(name === "typeA" && value === "entièrement"){
       setAchatData(prevData => ({
         ...prevData,
         ["statuA"]: "complet",
+        
       }));
+      setTypeAchat('entièrement');
+      
+    }
+    if(name === "prixA"){
+      setPrixA(value);
+    }
+    if(name === "qntA"){
+      setQntA(value);
     }
 
   };
@@ -101,7 +115,7 @@ const AjouterAchatForm = () => {
           <input type="number" name="prixA" className="form-control" id="product_price" placeholder="Enter product price" min="1"  onChange={handleInputChange} />
         </div>
         <div className="form-group">
-          <label htmlFor="product_price">Prix Achat</label>
+          <label htmlFor="product_price">Data Achat</label>
           <input type="date" name="dateA" className="form-control" id="product_price"  min="1"  onChange={handleInputChange} />
         </div>
         <div className="form-group">
@@ -114,6 +128,13 @@ const AjouterAchatForm = () => {
                           
           </select>
         </div>
+        {typeAchat==="partiellement" && qntA > 0 && prixA > 0 ? (<>
+          <div className="form-group">
+          <label htmlFor="product_price">Premier Versement</label>
+          <input type="number" name="montantVer" className="form-control" id="product_price"  min="1" max={qntA*prixA}  onChange={handleInputChange} />
+        </div>
+        
+        </>) : (<></>)}
 
         <div className="form-group">
           <label>Fournisseur</label>

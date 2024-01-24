@@ -34,24 +34,26 @@ import ProduitForm from './Components/Pages/Forms/Produit/ProduitForm.jsx';
 import AjouterVenteForm from './Components/Pages/Forms/Vente/AjouterVenteForm.jsx';
 import ApiProvider from './ApiProvider.jsx';
 
+
 function App() {
   const [showModalAchat, setShowModalAchat] = useState(false);
   const [showModalProduit, setShowModalProduit] = useState(false);
   const [showModalVente, setShowModalVente] = useState(false);
-  const [showModalTransfer, setShowModalTransfer] = useState(false);
+
   const [showModalUser, setShowModalUser] = useState(false);
 
-    
+  
     const handleOpenModalAchat = () => setShowModalAchat(true);
     const handleOpenModalProduit = () => setShowModalProduit(true);
     const handleOpenModalVente = () => setShowModalVente(true);
-    const handleOpenModalTransfer = () => setShowModalTransfer(true);
+  
     const handleOpenModalUser = () => setShowModalUser(true);
 
     const handleCloseModalAchat = () => setShowModalAchat(false);
+
     const handleCloseModalProduit = () => setShowModalProduit(false);
     const handleCloseModalVente = () => setShowModalVente(false);
-    const handleCloseModalTransfer = () => setShowModalTransfer(false);
+
     const handleCloseModalUser = () => setShowModalUser(false);
     const customStyles = {
       content: {
@@ -64,7 +66,9 @@ function App() {
         transform: 'translate(-50%, -50%)',
         border:'none',
         zIndex:99999,
-        backgroundColor:'white'
+        backgroundColor:'white',
+        height: "500px",
+        overFlow:'auto',
         
       },
     };
@@ -81,12 +85,10 @@ function App() {
          openModalAchat={handleOpenModalAchat} 
          openModalProduit={handleOpenModalProduit} 
          openModalVente={handleOpenModalVente} 
-         openModalTransfer={handleOpenModalTransfer} 
          openModalUser={handleOpenModalUser} 
          closeModalAchat={handleCloseModalAchat}
          closeModalProduit={handleCloseModalProduit}
          closeModalVente={handleCloseModalVente}
-         closeModalTransfer={handleCloseModalTransfer}
          closeModalUser={handleCloseModalUser}
       />
       </div>
@@ -118,13 +120,13 @@ function App() {
         <AjouterVenteForm  closeModalAchat={handleCloseModalVente}/>
         </Modal>
         <Modal
-        isOpen={showModalTransfer}
-        onRequestClose={handleCloseModalTransfer}
+        isOpen={showModalAchat}
+        onRequestClose={handleCloseModalAchat}
         
         contentLabel="Example Modal"
         style={customStyles}
       >
-        <AjouterAchatForm  closeModalAchat={handleCloseModalTransfer}/>
+        <AjouterAchatForm  closeModalAchat={handleCloseModalAchat}/>
         </Modal>
         <Modal
         isOpen={showModalUser}
@@ -134,7 +136,9 @@ function App() {
       >
         <AjouterUtilisateurForm  closeModalAchat={handleCloseModalUser}/>
         </Modal>
+
         <Routes>
+          <Route path="/" exact element={<Dashboard />} />
           <Route path="/dashboard" exact element={<Dashboard />} />
           <Route path="/center1/*" exact element={<Centre1 showModalVente={showModalVente} handleCloseModalVente = {handleCloseModalVente}/>} />
           <Route path="/center2/*" exact element={<Centre2 showModalVente={showModalVente}  handleCloseModalVente = {handleCloseModalVente}/>} />
@@ -161,7 +165,7 @@ function App() {
 
             
             <Route path="/modifier-utilisateur" element={<ModifierUtilisateur />} />
-            <Route path="/consulter-utilisateur" element={<ConsulterUtilisateur />} />
+          <Route path="/consulter-utilisateur" element={<ConsulterUtilisateur  />} />
 
         
 

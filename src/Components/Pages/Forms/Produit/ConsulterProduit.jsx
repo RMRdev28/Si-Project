@@ -2,17 +2,43 @@ import React, { useContext, useEffect, useState } from 'react';
 import ApiContext from '../../../../ApiContext';
 import { Table, Pagination } from 'react-bootstrap';
 import Swal from 'sweetalert2'
+import Modal from 'react-modal';
+import Transfer from './Transfer';
+import EditProduct from './EditProduct';
 
 export default function ConsulterProduit() {
   const { ProductsC, fetchProductsC,editProduct,deleteProduct } = useContext(ApiContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [filterType, setFilterType] = useState('');
+  const [productId, setProductId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [showModalTransfer, setShowModalTransfer] = useState(false);
+  const [showModalEditProduct, setShowModalEditProduct] = useState(false);
+  const handleOpenModalTransfer = (id) => {setShowModalTransfer(true); setProductId(id)};
+  const handleOpenModalEditProduct = (id) => {setShowModalEditProduct(true); setProductId(id)};
+  const handleCloseModalTransfer = () => setShowModalTransfer(false);
+  const handleCloseModalEditProduct = () => setShowModalEditProduct(false);
   useEffect(() => { 
     fetchProductsC();
   }, [fetchProductsC]);
+  const customStyles = {
+    content: {
+      position:'fixed',
+      top: '50%',
+      left: '55%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      border:'none',
+      zIndex:99999,
+      backgroundColor:'white',
+      height: "500px",
+      overFlow:'auto',
+      
+    },
+  };
 
   const produits = ProductsC ? ProductsC.produits : [];
   const handleDelete = (id) =>{
@@ -81,10 +107,26 @@ export default function ConsulterProduit() {
               </div>
               </div>
         
-     
+      
             </div>
             {produits && produits.length > 0 ? (
                 <>
+                <Modal
+                        isOpen={showModalTransfer}
+                        onRequestClose={handleCloseModalTransfer}
+                        
+                        contentLabel="Example Modal"
+                        style={customStyles}>
+                          <Transfer closeModalTransfer={handleCloseModalTransfer} id={productId} />
+                </Modal>
+                <Modal
+                        isOpen={showModalEditProduct}
+                        onRequestClose={handleCloseModalEditProduct}
+                        
+                        contentLabel="Example Modal"
+                        style={customStyles}>
+                          <EditProduct closeModalTransfer={handleCloseModalEditProduct} id={productId} />
+                </Modal>
                     <Table striped bordered hover>
                         <thead>
                             <tr>
@@ -105,7 +147,8 @@ export default function ConsulterProduit() {
                                     <td>{prod.typeP}</td>
                                     <td>{prod.qntEnStock}</td>
                                     <td>
-                                      <button className="btn btn-primary me-2" onClick={() => editProduct(prod.id)}><i class="bi bi-pencil-square"></i></button>
+                                      <button className="btn btn-success me-2" onClick={() => handleOpenModalTransfer(prod.id)}><i class="bi bi-send"></i></button>
+                                      <button className="btn btn-primary me-2" onClick={() => handleOpenModalEditProduct(prod.id)}><i class="bi bi-pencil-square"></i></button>
                                         <button className="btn btn-danger" onClick={() => handleDelete(prod.id)}><i class="bi bi-trash3-fill"></i></button>
                                     </td>
                                 </tr>

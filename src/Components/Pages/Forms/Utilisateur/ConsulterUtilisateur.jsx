@@ -3,36 +3,24 @@ import ApiContext from '../../../../ApiContext';
 import { Table, Pagination } from 'react-bootstrap';
 import Modal from 'react-modal';
 import Swal from 'sweetalert2'
-import DetailUser from './DetailUser'
+import DetailUser from './DetailUser';
 
-export default function ConsulterUtilisateur() {
-  const { Users, fetchUsers} = useContext(ApiContext);
-  const [isOpenDetail,setIsOpenDetail] = useState(false);
-  const [idUser,setIdUser] = useState('');
-  const handleCloseModalDetail = () => setIsOpenDetail(false);
-  const handleOpenModalDetail = (id) => {setIsOpenDetail(true); setIdUser(id)}
-  const path = location.pathname;
+
+export default function ConsulterUtilisateur(props) {
+  const { Users, fetchUsers,deleteUser,employeAbssence,messageData} = useContext(ApiContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [filterType1, setFilterType1] = useState('');
-  const customStyles = {
-    content: {
-      position:'fixed',
-      top: '50%',
-      left: '55%',
-      right: 'auto',
-      bottom: 'auto',
-      marginRight: '-50%',
-      transform: 'translate(-50%, -50%)',
-      border:'none',
-      zIndex:99999,
-      backgroundColor:'white'
-      
-    },
-  };
+  const [idUser,setIdUser] = useState('');
+  const [typeUser,setTypeUser] = useState('');
+  const [isOpenDetail,setIsOpenDetail] = useState(false);
+  const handleOpenModalDetail = (id,type) => {setIsOpenDetail(true); setIdUser(id); setTypeUser(type)}
+  const handleCloseModalDetail = () => setIsOpenDetail(false);
+
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers]);
+    fetchUsers();
+  }, [Users]);
+
   const users = Users ? Users.utilisateurs : [];
   const handleDelete = (id) =>{
     Swal.fire({
@@ -45,10 +33,10 @@ export default function ConsulterUtilisateur() {
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
-        deleteProduct(id).then(() => {
+        deleteUser(id).then(() => {
           Swal.fire(
             'Deleted!',
-            'Your file has been deleted.',
+            'Your User is delted to day.',
             'success'
           )
         }).catch((error) => {
@@ -62,6 +50,56 @@ export default function ConsulterUtilisateur() {
     })
     
   }
+  
+
+  const handleAbsence = (id) =>{
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        employeAbssence(id).then(() => {
+          Swal.fire(
+            'Abbsent!',
+           
+            messageData.message,
+            'success'
+          )
+        }).catch((error) => {
+          Swal.fire(
+            'Failed!',
+            'There was a problem ',
+            'error'
+          )
+        });
+      }
+    })
+    
+  }
+  const customStyles = {
+    content: {
+      position:'fixed',
+      top: '50%',
+      left: '55%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      border:'none',
+      zIndex:99999,
+      backgroundColor:'white',
+      height: "500px",
+      overFlow:'auto',
+    
+      
+    },
+  };
+
 
   const filteredAchats = filterType1 ? users.filter(u => u.typeUtilisateur === filterType1) : users;
 
@@ -75,14 +113,7 @@ export default function ConsulterUtilisateur() {
     return (
 
         <div className='containre mt-2 p-5'> 
-                                  <Modal
-                                        isOpen={isOpenDetail}
-                                        onRequestClose={handleCloseModalDetail}
-                                        contentLabel="Example Modal"
-                                        style={customStyles}
-                                      >
-                                        <DetailUser idUser={idUser}  closeModalDetail={handleCloseModalDetail}/>
-                                        </Modal>
+
              <div className="mt-3">
                 
                   <div className="alert alert-success">
@@ -101,20 +132,7 @@ export default function ConsulterUtilisateur() {
                           </select>
                         </div>
                       </div>
-                      {filterType1 === "employe" ? (
-                                                <div className="col-6">
-                                                <div className="input-group mb-3">
-                                                  <select className='form-select' onChange={e => setFilterType2(e.target.value)}>
-                                                    <option value="">Filter by Center</option>
-                                                    <option value="1">Center 1</option>
-                                                    <option value="2">Center 2</option>
-                                                    <option value="3">Center 3</option>
-                                 
-                                                   
-                                                  </select>
-                                                </div>
-                                              </div>
-                      ) : (<span></span>)} 
+
                                        <div className="col-6">
                                   <div className="input-group mb-3">
                                       
@@ -131,6 +149,14 @@ export default function ConsulterUtilisateur() {
             </div>
             {users && users.length > 0 ? (
                 <>
+                        <Modal
+                                        isOpen={isOpenDetail}
+                                        onRequestClose={handleCloseModalDetail}
+                                        contentLabel="Example Modal"
+                                        style={customStyles}
+                                      >
+                  <DetailUser idUser={idUser} type={typeUser}  closeModalDetail={handleCloseModalDetail}/>
+                                        </Modal>
                     <Table striped bordered hover>
                         <thead>
                             <tr>
@@ -155,7 +181,10 @@ export default function ConsulterUtilisateur() {
                                     <td>{u.typeUtilisateur}</td>
                                   
                                     <td>
-                                    <button className="btn btn-warning me-1"  onClick={()=> handleOpenModalDetail(u.id)}><i className="bi bi-info-square"></i></button>
+                                      {u.typeUtilisateur === "employe" ? (
+                                         <button className="btn btn-success me-1"  onClick={()=>handleAbsence(u.id)}><i class="bi bi-ban-fill"></i></button>
+                                      ) : (<></>)}
+                                    <button className="btn btn-warning me-1"  onClick={()=> handleOpenModalDetail(u.id,u.typeUtilisateur)}><i className="bi bi-info-square"></i></button>
                                       <button className="btn btn-primary me-1" onClick={() => editProduct(u.id)}><i class="bi bi-pencil-square"></i></button>
                                         <button className="btn btn-danger me-1" onClick={() => handleDelete(u.id)}><i class="bi bi-trash3-fill"></i></button>
                                    

@@ -1,17 +1,23 @@
 import React, { useContext, useEffect, useState } from 'react';
 import ApiContext from '../../../../ApiContext';
 import { Table, Pagination } from 'react-bootstrap';
+import Modal from 'react-modal';
 import Swal from 'sweetalert2'
+import DetailAchat from './DetailAchat';
 
 export default function ConsulterAchat() {
-  const { Achats, fetchAchats,fetchFournisseurs,Fournisseurs,fetchProductsall,Products } = useContext(ApiContext);
+  const { Achats, fetchAchats,fetchFournisseurs,Fournisseurs,fetchProductsall,Products,deleteAchat } = useContext(ApiContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [filterType1, setFilterType1] = useState('');
+  const [showDetailAchatModal, setShowDetailAchatModal] = useState(false);
+  const [idAchat, setIdAchat] = useState('');
+  const [totalAchat, setTotalAchat] = useState('');
   const [filterType2, setFilterType2] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
+  const handleOpenModalDetail = (id,qnt,prix) => {setShowDetailAchatModal(true); setIdAchat(id); setTotalAchat(qnt*prix)};
+  const handleCloseModalDetail = () => setShowDetailAchatModal(false);
   useEffect(() => {
     fetchFournisseurs()
     fetchProductsall()
@@ -31,7 +37,7 @@ export default function ConsulterAchat() {
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
-        deleteProduct(id).then(() => {
+        deleteAchat(id).then(() => {
           Swal.fire(
             'Deleted!',
             'Your file has been deleted.',
@@ -48,6 +54,24 @@ export default function ConsulterAchat() {
     })
     
   }
+  const customStyles = {
+    content: {
+      position:'fixed',
+      top: '50%',
+      left: '55%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      border:'none',
+      zIndex:99999,
+      backgroundColor:'white',
+      height: "500px",
+      overFlow:'auto',
+      
+    },
+  };
+
   const filteredAchats = filterType1 ? achats.filter(ac => ac.prdA.id == filterType1) : achats;
   const filteredAchats2 = filterType2 ? filteredAchats.filter(ac => ac.fournisseurA.id == filterType2) : filteredAchats;
   const filteredAchatsByDateRange = startDate && endDate 
@@ -149,6 +173,14 @@ export default function ConsulterAchat() {
             </div>
             {achats && achats.length > 0 ? (
                 <>
+                  <Modal
+                        isOpen={showDetailAchatModal}
+                        onRequestClose={handleCloseModalDetail}
+                        
+                        contentLabel="Example Modal"
+                        style={customStyles}>
+                          <DetailAchat closeModalDetail={handleCloseModalDetail} id={idAchat} total={totalAchat} />
+                </Modal>
                     <Table striped bordered hover>
                         <thead>
                             <tr>
@@ -178,7 +210,7 @@ export default function ConsulterAchat() {
                                       <button className="btn btn-primary me-1" onClick={() => editProduct(ac.id)}><i class="bi bi-pencil-square"></i></button>
                                         <button className="btn btn-danger " onClick={() => handleDelete(ac.id)}><i class="bi bi-trash3-fill"></i></button>
                                         {ac.typeA === "partiellement" ? (
-                                       <button className="btn btn-warning me-1"  onClick={() => editProduct(ac.id)}><i className="bi bi-info-square"></i></button>
+                                       <button className="btn btn-warning me-1"  onClick={() => handleOpenModalDetail(ac.id,ac.qntA,ac.prixA)}><i className="bi bi-info-square"></i></button>
                                     ): (<span></span>)}
                                     </td>
                                 </tr>

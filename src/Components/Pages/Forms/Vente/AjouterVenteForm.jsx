@@ -4,6 +4,9 @@ import ApiContext from '../../../../ApiContext';
 
 const AjouterVenteForm = () => {
   const {ProductsC,fetchProductsC,Clients,fetchClients, insertVente} = useContext(ApiContext);
+  const [typeVente,setTypeVente]= useState('');
+  const [qntV,setQntV]= useState('');
+  const [prixV,setPrixV]= useState('');
   const [VenteData, setVenteData] = useState({
     prdV: '',
     qntV:'',
@@ -11,7 +14,8 @@ const AjouterVenteForm = () => {
     clientV: '',
     typeV: '',
     statuV: 'complet',
-    centre: ''
+    centre: '',
+    montantVer: '',
   });
 
   useEffect(() => { 
@@ -50,13 +54,21 @@ const AjouterVenteForm = () => {
         ...prevData,
         ["statuV"]: "incomplet",
       }));
+      setTypeVente('partiellement');
     }else if(name === "typeV" && value === "entièrement"){
       setVenteData(prevData => ({
         ...prevData,
         ["statuV"]: "complet",
       }));
+      setTypeVente('entièrement');
+      
     }
-
+    if(name === "prixV"){
+      setPrixV(value);
+    }
+    if(name === "qntV"){
+      setQntV(value);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -116,10 +128,17 @@ const AjouterVenteForm = () => {
                           
           </select>
         </div>
+        {typeVente==="partiellement" && qntV > 0 && prixV > 0 ? (<>
+          <div className="form-group">
+          <label htmlFor="product_price">Premier Versement</label>
+          <input type="number" name="montantVer" className="form-control" id="product_price"  min="1" max={qntV*prixV}  onChange={handleInputChange} />
+        </div>
+        
+        </>) : (<></>)}
         <div className="form-group">
           <label>Centre</label>
           <select name='centre' className="form-control select2" style={{ width: '100%' }} defaultValue="matiere" onChange={handleInputChange}>
-          <option value="">Select Centre</option>
+          <option value="">Magasin</option>
           <option value="1">Centre 1</option>
           <option value="2">Centre 2</option>
           <option value="3">Centre 3</option>
