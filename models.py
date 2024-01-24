@@ -177,7 +177,7 @@ class Versement(models.Model):
                 self.achat.statuA = 'complet'
                 self.achat.save()
             fournisseur = self.achat.fournisseurA
-            fournisseur.solde -= self.montantVer
+            fournisseur.solde -= float(self.montantVer)
             fournisseur.save()
 
         elif self.vente:
@@ -186,7 +186,7 @@ class Versement(models.Model):
                 self.vente.statuV = 'complet'
                 self.vente.save()
             client = self.vente.clientV
-            client.credit -= self.montantVer
+            client.credit -= float(self.montantVer)
             client.save()
 
     def __str__(self):
@@ -204,8 +204,11 @@ class Transfert(models.Model):
     totalT = models.FloatField(default = 0)
     centreT = models.ForeignKey(Centre, on_delete=models.CASCADE, null = True, related_name='transferts')
     def save(self, *args, **kwargs):
-        self.totalT = self.prdT.get_last_price() * self.qntT
+        last_price = self.prdT.get_last_price()
+        qntT_as_int = int(self.qntT)  
+        self.totalT = last_price * qntT_as_int
         super(Transfert, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return "Transfer de : "+self.prdT.desigP+" A : "+self.centreT.desigC

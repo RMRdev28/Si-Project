@@ -24,7 +24,7 @@ def get_all_products_all(request):
 
 @api_view(['GET'])
 def get_all_users(request):
-    users = Utilisateur.objects.all()
+    users = Utilisateur.objects.filter(trashU=0)
     serializer = UtilisateurSerializer(users, many=True)  
     return Response({"utilisateurs": serializer.data})
 
@@ -55,37 +55,48 @@ def get_all_fournisseurs(request):
     return Response({"fournisseurs": serializer.data})
 
 @api_view(['GET'])
+def get_product_transfer(request,idP):
+    product = Produit.objects.get(id = idP)
+    transfert = Transfert.objects.filter(prdT = product)
+    serializer = TransferSerializer(transfert,many=True)  
+    return Response({"transfert": serializer.data})
+
+@api_view(['GET'])
 def get_all_centres(request):
     centres = Centre.objects.all()
     serializer = CentreSerializer(centres, many=True)  
     return Response({"centres": serializer.data})
 
 @api_view(['GET'])
+def get_versement_achat(request,idA):
+    achat = Achat.objects.get(id=idA)
+    versements = Versement.objects.filter(achat = achat)
+    serializer = VersementSerializer(versements, many=True)  
+    return Response({"versement": serializer.data})
+
+@api_view(['GET'])
+def get_versement_vente(request,idV):
+    vente = Vente.objects.get(id=idV)
+    versements = Versement.objects.filter(vente = vente)
+    serializer = VersementSerializer(versements, many=True)  
+    return Response({"versement": serializer.data})
+
+@api_view(['GET'])
 def get_all_achats(request):
-    achats = Achat.objects.all()
+    achats = Achat.objects.filter(trashA = 0)
     serializer = AchatSerializer(achats, many=True)  
     return Response({"achats": serializer.data})
 
 
 @api_view(['GET'])
 def get_all_ventes(request):
-    ventes = Vente.objects.all()
+    ventes = Vente.objects.filter(trashV = 0)
     serializer = VentesSerializer(ventes, many=True)  
     return Response({"ventes": serializer.data})
 
 
 
-@api_view(['GET'])
-def get_versement_vente(request, id_vente):
-    Versements = Versement.objects.filter(vente = id_vente)
-    serializer = VersementSerializer(Versements, many=True)  
-    return Response({"versements": serializer.data})
 
-@api_view(['GET'])
-def get_versement_achat(request, id_vente):
-    Versements = Versement.objects.filter(vente = id_vente)
-    serializer = VersementSerializer(Versements, many=True)  
-    return Response({"versements": serializer.data})
 
 @api_view(['GET'])
 def get_transfer_center(request, id_centre):
@@ -106,6 +117,16 @@ def get_salaire_mois(request, id_emp, mois, anne):
         'annee': anne
     }}
     return Response(context)
+
+@api_view(['GET'])
+def get_salaire_mois_actuelle(request,id_emp):
+    user = Utilisateur.objects.get(id=id_emp)
+
+    employe = Employe.objects.get(employe=user)
+    salaire_mensuel = employe.calculer_salaire_mensuel(datetime.now().month, datetime.now().year)
+
+
+    return Response({"data":salaire_mensuel})
 
 @api_view(['GET'])
 def get_user(request,id_user):
@@ -266,7 +287,16 @@ def create_product(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+@api_view(['POST'])
+def create_masrouf(request):
+   user = Utilisateur.objects.get(id = request.data['empMA'])
+   employe = Employe.objects.get(employe = user)
+   print(employe)
+   masrouf = MasAbs(dateMA = request.data['dateMA'],empMA = employe, montantMA = request.data['montantMA'],typeMA = "masrouf")
+   masrouf.save()
+   return Response({"done":"done"}) 
 
 @api_view(['POST'])
 def create_centre(request):
@@ -276,6 +306,34 @@ def create_centre(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def get_one_Product(request,idP):
+        product = Produit.objects.get(id=idP)
+        serializer = ProduitSerializer(product)
+        return Response({"data":serializer.data}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def employe_absent(request, idU):
+    try:
+        user = Utilisateur.objects.get(id=idU)
+        employe = Employe.objects.get(employe=user)  # Assuming one-to-one relationship
+    except (Utilisateur.DoesNotExist, Employe.DoesNotExist):
+        return Response({"message": "Employe not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    today = datetime.now().date()
+    existing_record = MasAbs.objects.filter(empMA=employe, dateMA=today, typeMA='abssence').first()
+
+    if existing_record:
+        return Response({"message": "Absence already recorded for today"}, status=status.HTTP_409_CONFLICT)
+    
+    new_absence = MasAbs.objects.create(
+        dateMA=today,
+        typeMA='abssence',
+        empMA=employe
+    )
+    return Response({"message": "done"},status=status.HTTP_201_CREATED)
+
 
 @api_view(['POST'])
 def create_user(request):
@@ -317,6 +375,9 @@ def create_Achat(request):
         serializer = InsertAchatSeriaizer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            achat = Achat.objects.get(id=serializer.data['id'])
+            montant = Versement(achat=achat,montantVer=request.data['montantVer'])
+            montant.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -326,6 +387,9 @@ def create_Vente(request):
         serializer = InsertVenteSeriaizer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            vente = Vente.objects.get(id=serializer.data['id'])
+            montant = Versement(vente=vente,montantVer=request.data['montantVer'])
+            montant.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -342,12 +406,24 @@ def create_Versement(request):
 
 @api_view(['POST'])
 def create_Transfert(request):
-    if request.method == 'POST':
-        serializer = TransferSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        product = Produit.objects.get(id=request.data['prdT'])
+        centre = Centre.objects.get(id=request.data['centreT'])
+    except (Produit.DoesNotExist, Centre.DoesNotExist) as e:
+        return Response({"message": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+    transfert = Transfert(prdT=product, centreT=centre, qntT=request.data['qntT'], dateT=request.data['dateT'])
+
+    try:
+        transfert.save()
+        product.qntEnStock -= int(transfert.qntT)
+        product.save()
+        if product.qntEnStock <= 10:
+            notification = Notification(status=0, prd=product)
+            notification.save()
+        return Response({"message": "done"}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 # @api_view(['POST'])
 # def create_AbsMas(request):
@@ -390,22 +466,74 @@ def update_employe(request):
 @api_view(['POST'])
 def update_product(request):
     try:
-        produit_id = request.data.get('id')
+        produit_id = request.data['id']
         if not produit_id:
             return Response({'error': 'Produit ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         produit = Produit.objects.get(id=produit_id)
-        produit_data = request.data.get('produit')
-        if produit_data:
-            Produit.objects.filter(id=produit.id).update(**produit_data)
+        produit.desigP = request.data['desigP']
+        produit.descP = request.data['descP']
+        produit.typeP = request.data['typeP']
+        produit.save()
 
-        produit_serializer = ProduitSerializer(produit)
-        return Response({"data":produit_serializer})
+        
+        return Response({"done":"done"})
 
     except Produit.DoesNotExist:
         return Response({'error': 'Produit not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def detail_vente(request, idV):
+    vente = Vente.objects.get(id = idV)
+    versement = Versement.objects.filter(vente=vente)
+
+    #calclue le reset 
+    totalVente = vente.prixV * int(vente.qntV)
+    reste = 0
+    for v in versement:
+        reste+=v.montantVer
+     
+    reste = totalVente - reste
+    serializer = VersementSerializer(versement, many=True)
+    return Response({"data":serializer.data,"reste":reste})
+
+
+@api_view(['GET'])
+def detail_achat(request, idA):
+    achat = Achat.objects.get(id = idA)
+    versement = Versement.objects.filter(achat=achat)
+
+    #calclue le reset 
+    totalVente = achat.prixA * int(achat.qntA)
+    reste = 0
+    for v in versement:
+        reste+=v.montantVer
+     
+    reste = totalVente - reste
+    serializer = VersementSerializer(versement, many=True)
+    return Response({"data":serializer.data,"reste":reste})
+
+@api_view(['POST'])
+def create_versemnt(request):
+    montant = request.data['montantVer']
+    if request.data['achat']:
+        achat = Achat.objects.get(id = request.data['achat'])
+        versment = Versement(montantVer=montant,achat=achat)
+        versment.save()
+        return Response({"done":"done"})
+    elif request.data['vente']:
+        vente = Vente.objects.get(id=request.data['vente'])
+        versment = Versement(montantVer = montant, vente = vente)
+        versment.save()
+        return Response({"done":"done"})
+    else:
+        return Response({"error":"error"})
+
+
+
+
 
 
 @api_view(['GET'])
@@ -443,4 +571,70 @@ def markasread(request):
 
 
 
+@api_view(['GET'])
+def delete_user(request, idU):
+    try:
+        
+        user = Utilisateur.objects.get(id=idU)
 
+
+        user.trashU = 1  
+        user.save()
+
+        # Return a success response
+        return Response({"message": "Product deleted successfully."}, status=status.HTTP_200_OK)
+
+    except Utilisateur.DoesNotExist:
+        # Return an error response if the product does not exist
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        # Handle other possible exceptions
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['GET'])
+def delete_vente(request, idV):
+    try:
+        
+        vente = Vente.objects.get(id=idV)
+
+
+        vente.trashV = 1  
+        if vente.save() :
+            produit = Produit.objects.get(id=vente.prdV.id)
+            produit.qntEnStock += vente.qntV
+            produit.save()
+
+        # Return a success response
+        return Response({"message": "Product deleted successfully."}, status=status.HTTP_200_OK)
+
+    except Vente.DoesNotExist:
+        # Return an error response if the product does not exist
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        # Handle other possible exceptions
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def delete_achat(request, idA):
+    try:
+        
+        achat = Achat.objects.get(id=idA)
+
+
+        achat.trashA = 1  
+        if achat.save() :
+            produit = Produit.objects.get(id=achat.prdA.id)
+            produit.qntEnStock -= achat.qntA
+            produit.save()
+
+        # Return a success response
+        return Response({"message": "Product deleted successfully."}, status=status.HTTP_200_OK)
+
+    except Vente.DoesNotExist:
+        # Return an error response if the product does not exist
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        # Handle other possible exceptions
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
